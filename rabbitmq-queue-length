@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import os
 import sys
-import re
 from optparse import OptionParser
 
 RABBITMQCTL = "/usr/sbin/rabbitmqctl"
@@ -18,11 +17,11 @@ WARN = int(options.warn)
 COMMAND = "%s -q list_queues -p %s" % (RABBITMQCTL, options.vhost)
 
 if not os.path.exists(RABBITMQCTL):
-    print "%s does not exist" % RABBITMQCTL
+    sys.stdout.write("%s does not exist\n" % RABBITMQCTL)
     sys.exit(3)
 
 if WARN > CRIT:
-    print "Warning value cannot be greater than critical value"
+    sys.stdout.write(""Warning value cannot be greater than critical value\n")
     sys.exit(3)
 
 data = os.popen(COMMAND).read().strip()
@@ -42,12 +41,12 @@ for line in data.split("\n"):
             is_warn = True
 
 if is_crit is True:
-    print "CRITICAL: %s" % output
+    sys.stdout.write("CRITICAL - %s\n" % output)
     sys.exit(2)
 if is_warn is True:
-    print "WARNING: %s" % output
+    sys.stdout.write("WARNING - %s\n" % output)
     sys.exit(1)
 
-print "OK: %s" % output
+sys.stdout.write("OK - %s" % output)
 sys.exit(0)
 
