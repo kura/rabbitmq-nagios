@@ -1,0 +1,12 @@
+Installation / Configuration
+============================
+
+1. Move plugins to you nagios plugins directory e.g. /var/lib/nagios/plugins/
+
+2. Allow nagios to perform sudo commands without a password, be sure to lock it down to only the rabbitmq plugins
+
+  nagios ALL=(ALL) NOPASSWD:/usr/lib/nagios/plugins/check_rabbitmq_queue_length
+
+3. Add the plugins to your nrpe.cfg
+
+  command[check_rabbitmq_queue_length]=sudo /usr/lib/nagios/plugins/check_rabbitmq_queue_length -w 10000 -c 20000 -v /
