@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import os
 import sys
+import re
 from optparse import OptionParser
 
 RABBITMQCTL = "/usr/sbin/rabbitmqctl"
@@ -9,6 +10,7 @@ parser = OptionParser()
 parser.add_option("-w", "--warning", dest="warn", metavar="INT", type="int", default=100, help="Default: 100")
 parser.add_option("-c", "--critical", dest="crit", metavar="INT", type="int", default=200, help="Default: 200")
 parser.add_option("-v", "--vhost", dest="vhost", metavar="VIRTUAL_HOST", type="string", default="/", help="Default \"/\"")
+parser.add_option("-q", "--queue", dest="queue", metavar="QUEUE", type="string", default=None, help="Default: all")
 (options, args) = parser.parse_args()
 
 CRIT = int(options.crit)
@@ -31,16 +33,27 @@ is_crit = False
 output = ""
 perf = ""
 
-for line in data.split("\n"):
+def check_line(line):
     queue, length = line.split("\t")
     length = int(length)
-    output += "%s: %s; " % (queue, length)
-    perf += "length=%sITEMS;%s;%s;; " % (length, WARN, CRIT)
+    globals()['output'] += "%s: %s; " % (queue, length)
+    globals()['perf'] += "length=%sITEMS;%s;%s;; " % (length, WARN, CRIT)
     if length > CRIT:
-        is_crit = True
+        globals()['is_crit'] = True
     if length > WARN:
         if is_crit is not True:
-            is_warn = True
+            globals()['is_warn'] = True
+
+for line in data.split("\n"):
+    if options.queue is not None:
+        if re.match(r"^%s\t[\d]*" % options.queue, line):
+            check_line(line)
+    else:
+        check_line(line)
+
+if output == "":
+    sys.stdout.write("No output, did you specific a vhost or queue and is it correct?\n")
+    sys.exit(2)
 
 if is_crit is True:
     sys.stdout.write("QUEUE CRITICAL - %s|%s\n" % (output, perf))
@@ -51,4 +64,3 @@ if is_warn is True:
 
 sys.stdout.write("QUEUE OK - %s|%s\n" % (output, perf))
 sys.exit(0)
-
