@@ -17,11 +17,11 @@ WARN = int(options.warn)
 COMMAND = "%s -q list_queues -p %s" % (RABBITMQCTL, options.vhost)
 
 if not os.path.exists(RABBITMQCTL):
-    sys.stdout.write("%s does not exist\n" % RABBITMQCTL)
+    print "%s does not exist" % RABBITMQCTL
     sys.exit(3)
 
 if WARN > CRIT:
-    sys.stdout.write(""Warning value cannot be greater than critical value\n")
+    print "Warning value cannot be greater than critical value"
     sys.exit(3)
 
 data = os.popen(COMMAND).read().strip()
@@ -29,11 +29,13 @@ data = os.popen(COMMAND).read().strip()
 is_warn = False
 is_crit = False
 output = ""
+perf = ""
 
 for line in data.split("\n"):
     queue, length = line.split("\t")
     length = int(length)
-    output += "%s = %s; " % (queue, length)
+    output += "%s: %s; " % (queue, length)
+    perf += "length=%sITEMS;%s;%s;; " % (length, WARN, CRIT)
     if length > CRIT:
         is_crit = True
     if length > WARN:
@@ -41,12 +43,12 @@ for line in data.split("\n"):
             is_warn = True
 
 if is_crit is True:
-    sys.stdout.write("CRITICAL - %s\n" % output)
+    sys.stdout.write("QUEUE CRITICAL - %s|%s\n" % (output, perf))
     sys.exit(2)
 if is_warn is True:
-    sys.stdout.write("WARNING - %s\n" % output)
+    sys.stdout.write("QUEUE WARNING - %s|%s\n" % (output, perf))
     sys.exit(1)
 
-sys.stdout.write("OK - %s" % output)
+sys.stdout.write("QUEUE OK - %s|%s\n" % (output, perf))
 sys.exit(0)
 
